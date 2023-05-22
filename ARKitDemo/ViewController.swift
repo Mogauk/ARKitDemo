@@ -9,6 +9,42 @@ import UIKit
 import SpriteKit
 import ARKit
 
+enum BirdType: Int {
+    case fat
+    case blue
+    case grumpy
+    case flying
+    
+    var prefix: String {
+        switch self {
+        case .fat: return "fatbird"
+        case .blue: return "bluebird"
+        case .grumpy: return "grumpybird"
+        case .flying: return "flyingbird"
+        }
+    }
+    
+    private static let count: Int = {
+        var max: Int = 0
+        while let _ = BirdType(rawValue: max) { max += 1 }
+        return max
+    }()
+    
+    static func random() -> BirdType {
+        let randomNumber = arc4random_uniform(UInt32(BirdType.count))
+        return BirdType(rawValue: Int(randomNumber))!
+    }
+    
+    func keyFrames() -> [SKTexture] {
+        var textures: [SKTexture] = []
+        for index in 1...8 {
+            textures.append(SKTexture(imageNamed: "\(self.prefix)-\(index)"))
+        }
+        
+        return textures
+    }
+}
+
 class ViewController: UIViewController, ARSKViewDelegate {
     
     @IBOutlet var sceneView: ARSKView!
@@ -26,6 +62,8 @@ class ViewController: UIViewController, ARSKViewDelegate {
         // Load the SKScene from 'Scene.sks'
         if let scene = SKScene(fileNamed: "Scene") {
             sceneView.presentScene(scene)
+            
+           
         }
     }
     
@@ -34,7 +72,7 @@ class ViewController: UIViewController, ARSKViewDelegate {
         
         // Create a session configuration
         let configuration = ARWorldTrackingConfiguration()
-
+        
         // Run the view's session
         sceneView.session.run(configuration)
     }
@@ -45,15 +83,36 @@ class ViewController: UIViewController, ARSKViewDelegate {
         // Pause the view's session
         sceneView.session.pause()
     }
+        
+//    func randomBirdsImage() -> UIImage {
+//        let unsignedArrayCount = UInt32(birdsImagesArray.count)
+//        let unsignedRandomNumber = arc4random_uniform(unsignedArrayCount)
+//        let randomNumber = Int(unsignedRandomNumber)
+//        return UIImage(named: birdsImagesArray[randomNumber]) ?? UIImage(imageLiteralResourceName: "👾")
+//    }
     
     // MARK: - ARSKViewDelegate
     
-    func view(_ view: ARSKView, nodeFor anchor: ARAnchor) -> SKNode? {
+    internal func view(_ view: ARSKView, nodeFor anchor: ARAnchor) -> SKNode? {
         // Create and configure a node for the anchor added to the view's session.
-        let labelNode = SKLabelNode(text: "👾")
-        labelNode.horizontalAlignmentMode = .center
-        labelNode.verticalAlignmentMode = .center
-        return labelNode;
+        
+        //let labelNode = SKLabelNode(text: "👾")
+        //        labelNode.horizontalAlignmentMode = .center
+        //        labelNode.verticalAlignmentMode = .center
+        //        return labelNode;
+        
+        let birdType = BirdType.random()
+        let birdFrames = birdType.keyFrames()
+        
+        let spriteNode = SKSpriteNode(texture: birdFrames[0])
+        spriteNode.position = CGPoint(x: view.center.x, y: view.center.y)
+        spriteNode.size = CGSize(width: spriteNode.size.width * 0.1, height: spriteNode.size.height * 0.1)
+        
+        let flyingAction = SKAction.repeatForever(SKAction.animate(with: birdFrames, timePerFrame: 0.1))
+       
+        spriteNode.run(flyingAction)
+        
+        return spriteNode
     }
     
     func session(_ session: ARSession, didFailWithError error: Error) {
